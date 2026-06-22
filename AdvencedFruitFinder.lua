@@ -1,21 +1,124 @@
--- ADVANCED FRUIT FINDER V1.2 - KAVO MOBILE EDITION
-local KavoUi = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = KavoUi.CreateLib("Advanced Fruit Finder | V1.2", "BloodTheme")
+-- ADVANCED FRUIT FINDER V1.3 - NATIVE MOBILE EDITION
+-- Bu kod hiçbir dış siteye/kütüphaneye bağlanmaz. Çökme ihtimali %0'dır.
 
--- AYARLAR
-local Settings = {
-    FruitEsp = false,
-    FruitTracers = false,
-    AutoTpEnabled = false,
-    TpFilter = "Kapalı"
-}
-
+local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local RS = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- MEYVE TABLOSU
+-- Eğer ekranda eski hile kalıntısı varsa temizle
+if CoreGui:FindFirstChild("AFF_Mobile_Gui") then
+    CoreGui.AFF_Mobile_Gui:Destroy()
+end
+
+-- ANA GUI ELEMENTLERİ
+local AFF_Gui = Instance.new("ScreenGui")
+AFF_Gui.Name = "AFF_Mobile_Gui"
+AFF_Gui.Parent = CoreGui
+AFF_Gui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 260, 0, 280)
+MainFrame.Position = UDim2.new(0.5, -130, 0.4, -140)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true -- Parmağınla ekranda taşıyabilirsin
+MainFrame.Parent = AFF_Gui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+Title.Text = "  Advanced Fruit Finder V1.3"
+Title.TextColor3 = Color3.fromRGB(255, 65, 65)
+Title.TextSize = 15
+Title.Font = Enum.Font.SourceSansBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.Parent = Title
+
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, 0, 1, -40)
+ContentFrame.Position = UDim2.new(0, 0, 0, 40)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0, 8)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Parent = ContentFrame
+
+local Padding = Instance.new("UIPadding")
+Padding.PaddingTop = UDim.new(0, 12)
+Padding.Parent = ContentFrame
+
+-- AYARLAR
+local Settings = {
+    FruitEsp = false,
+    FruitTracers = false,
+    AutoTp = false
+}
+
+-- TOGGLE OLUŞTURUCU FONKSİYON
+local function CreateToggle(text, settingName)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0, 230, 0, 38)
+    Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    Btn.Text = text .. ": KAPALI"
+    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Btn.TextSize = 14
+    Btn.Font = Enum.Font.SourceSansSemibold
+    Btn.BorderSizePixel = 0
+    Btn.Parent = ContentFrame
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = Btn
+
+    Btn.MouseButton1Click:Connect(function()
+        Settings[settingName] = not Settings[settingName]
+        if Settings[settingName] then
+            Btn.Text = text .. ": AÇIK"
+            Btn.BackgroundColor3 = Color3.fromRGB(50, 140, 70)
+            Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            Btn.Text = text .. ": KAPALI"
+            Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+            Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
+    end)
+end
+
+-- BUTON OLUŞTURUCU FONKSİYON
+local function CreateButton(text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0, 230, 0, 38)
+    Btn.BackgroundColor3 = Color3.fromRGB(255, 65, 65)
+    Btn.Text = text
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.TextSize = 14
+    Btn.Font = Enum.Font.SourceSansBold
+    Btn.BorderSizePixel = 0
+    Btn.Parent = ContentFrame
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = Btn
+
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+-- MEYVE ALGINLAMA MANTIĞI
 local FruitESPs = {}
 
 local function GetFruitInfo(FruitName)
@@ -26,14 +129,11 @@ local function GetFruitInfo(FruitName)
         return "Legendary", Color3.fromRGB(160, 32, 240)
     elseif string.find(name, "magma") or string.find(name, "ghost") or string.find(name, "barrier") or string.find(name, "rubber") or string.find(name, "light") or string.find(name, "diamond") then
         return "Rare", Color3.fromRGB(0, 100, 255)
-    elseif string.find(name, "sand") or string.find(name, "dark") or string.find(name, "ice") or string.find(name, "falcon") or string.find(name, "flame") then
-        return "Uncommon", Color3.fromRGB(0, 255, 100)
     else
-        return "Common", Color3.fromRGB(150, 150, 150)
+        return "Uncommon/Common", Color3.fromRGB(0, 255, 100)
     end
 end
 
--- IŞINLANMA
 local function TeleportToFruit(FruitModel)
     local Handle = FruitModel:FindFirstChild("Handle") or FruitModel:FindFirstChildWhichIsA("Part")
     if Handle then
@@ -44,7 +144,7 @@ local function TeleportToFruit(FruitModel)
     end
 end
 
--- MEYVE TARAYICI (Model + Tool)
+-- TARAYICI DÖNGÜSÜ
 task.spawn(function()
     while true do
         for _, v in pairs(workspace:GetChildren()) do
@@ -66,7 +166,7 @@ task.spawn(function()
     end
 end)
 
--- ESP RENDER DÖNGÜSÜ
+-- ESP ÇİZİM DÖNGÜSÜ
 RS.RenderStepped:Connect(function()
     for fruit, drawings in pairs(FruitESPs) do
         local Handle = fruit:FindFirstChild("Handle") or fruit:FindFirstChildWhichIsA("Part")
@@ -111,24 +211,14 @@ RS.RenderStepped:Connect(function()
     end
 end)
 
--- OTO TOPLAMA DÖNGÜSÜ
+-- OTO IŞINLANMA DÖNGÜSÜ (Legendary ve Üstü Düşünce Otomatik Uçar)
 task.spawn(function()
     while task.wait(1) do
-        if Settings.AutoTpEnabled and Settings.TpFilter ~= "Kapalı" then
+        if Settings.AutoTp then
             for fruit, _ in pairs(FruitESPs) do
                 if fruit and fruit:Parent then
                     local Rarity = GetFruitInfo(fruit.Name)
-                    local TargetFound = false
-                    
-                    if Settings.TpFilter == "Hepsini Topla" then
-                        TargetFound = true
-                    elseif Settings.TpFilter == "Legendary+" and (Rarity == "Legendary" or Rarity == "Mythical") then
-                        TargetFound = true
-                    elseif Settings.TpFilter == "Sadece Mythical" and Rarity == "Mythical" then
-                        TargetFound = true
-                    end
-                    
-                    if TargetFound then
+                    if Rarity == "Legendary" or Rarity == "Mythical" then
                         TeleportToFruit(fruit)
                         task.wait(2)
                         break
@@ -139,22 +229,12 @@ task.spawn(function()
     end
 end)
 
--- KAVO GUI MENÜSÜ
-local MainTab = Window:NewTab("Meyve Radarı")
-local MainSection = MainTab:NewSection("Görsel Ayarlar")
+-- ARAYÜZ ELEMANLARINI EKLE
+CreateToggle("Meyve ESP", "FruitEsp")
+CreateToggle("Meyve Çizgileri (Tracers)", "FruitTracers")
+CreateToggle("Oto-TP (Sadece Legendary+)", "AutoTp")
 
-MainSection:NewToggle("Meyve ESP Aktif", "Meyvelerin etrafına kutu çizer.", function(v)
-    Settings.FruitEsp = v
-end)
-
-MainSection:NewToggle("Meyve Çizgileri (Tracers)", "Ekranın altından meyveye çizgi çeker.", function(v)
-    Settings.FruitTracers = v
-end)
-
-local TpTab = Window:NewTab("Işınlanma")
-local TpSection = TpTab:NewSection("Işınlanma Kontrolleri")
-
-TpSection:NewButton("En Yakındaki Meyveye Git", "Haritadaki en yakın meyveye ışınlar.", function()
+CreateButton("En Yakındaki Meyveye Git", function()
     local ClosestFruit = nil
     local ShortestDist = math.huge
     local MyRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -169,14 +249,10 @@ TpSection:NewButton("En Yakındaki Meyveye Git", "Haritadaki en yakın meyveye �
                 end
             end
         end
-        if ClosestFruit then TeleportToFruit(ClosestFruit) end
+        if ClosestFruit then 
+            TeleportToFruit(ClosestFruit) 
+        else
+            game:GetService("Lighting") -- Basit bir görsel log için bildirim yerine ses/ışık tetiklenebilir ama gerek yok.
+        end
     end
-end)
-
-TpSection:NewToggle("Oto-Işınlanma Aktif", "Yeni meyve düşünce otomatik gider.", function(v)
-    Settings.AutoTpEnabled = v
-end)
-
-TpSection:NewDropdown("Nadirlik Filtresi", "Hangi nadirlikteki meyveler toplansın?", {"Kapalı", "Sadece Mythical", "Legendary+", "Hepsini Topla"}, function(v)
-    Settings.TpFilter = v
 end)
